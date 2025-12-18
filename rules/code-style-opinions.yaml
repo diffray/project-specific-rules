@@ -1,0 +1,186 @@
+# Example: Code style opinions
+# Copy to .diffray/rules/ and customize for your project
+#
+# These rules enforce style preferences that vary by team:
+# - Some teams ban console.log, others allow it
+# - TODO comment tracking varies by workflow
+# - Magic numbers tolerance varies by context
+# - Generic naming (Helper, Manager) is acceptable in some patterns
+
+rules:
+  - id: general_console_log_committed
+    agent: general
+    title: console.log left in production code
+    description: Debug console statements should not be committed
+    importance: 4
+    match:
+      file_glob:
+        - '**/*.js'
+        - '**/*.ts'
+        - '**/*.jsx'
+        - '**/*.tsx'
+        - '!**/*.test.*'
+        - '!**/*.spec.*'
+      content_regex:
+        - console\.log\(
+        - console\.debug\(
+    checklist:
+      - Find console.log in non-test files
+      - Check if it's intentional logging vs debug leftover
+      - Suggest using proper logger or removing
+    examples:
+      bad: |
+        function processPayment(amount) {
+          console.log('Processing:', amount);  // Debug leftover
+          return payment.process(amount);
+        }
+      good: |
+        import { logger } from './logger';
+
+        function processPayment(amount) {
+          logger.info('Processing payment', { amount });
+          return payment.process(amount);
+        }
+    tags:
+      - maintainability
+    why_important: Debug logs clutter production output.
+
+  - id: general_todo_fixme_comment_found
+    agent: quality
+    title: TODO/FIXME comment found
+    description: 'Replace TODO/FIXME with a tracked issue reference (e.g., TODO(#1234))'
+    importance: 5
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.py'
+        - '**/*.go'
+      content_regex:
+        - (?:^|\s)TODO(?:\s*:|\s+)
+        - (?:^|\s)FIXME(?:\s*:|\s+)
+    checklist:
+      - Find all TODO and FIXME comments
+      - Check if already references an issue (#123 or JIRA-456)
+      - If no reference, suggest adding one
+    examples:
+      bad: |
+        // TODO: Implement caching
+        // FIXME: This is slow
+      good: |
+        // TODO(#1234): Implement caching layer
+        // FIXME(PROJ-567): Optimize this query
+    tags:
+      - maintainability
+    why_important: Untracked TODOs get forgotten.
+
+  - id: qual_semantic_naming_js
+    agent: quality
+    title: Non-descriptive variable/function/class names
+    description: Names should describe their purpose clearly
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.tsx'
+        - '**/*.jsx'
+      content_regex:
+        - class\s+(Helper|Manager|Data|Info|Util|Handler|Processor)\s
+    checklist:
+      - Find generic names like Helper, Manager, Data, Util without context
+      - Verify function names describe what they do
+      - Look for single-letter variables in complex logic
+    examples:
+      bad: |
+        class Manager {
+          process(data) { ... }
+        }
+
+        class Helper {
+          doStuff() { ... }
+        }
+      good: |
+        class UserPermissionManager {
+          validateAccess(user) { ... }
+        }
+
+        class EmailValidator {
+          validate(email) { ... }
+        }
+    tags:
+      - quality
+      - readability
+    why_important: Generic names don't convey purpose.
+
+  - id: quality_magic_numbers
+    agent: quality
+    title: Magic numbers - hardcoded values
+    description: Hardcoded numeric values without named constants
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.java'
+        - '**/*.py'
+      content_regex:
+        - ==\s*\d+[^.]
+        - ">\\s*\\d+[^.]"
+    checklist:
+      - Find numeric comparisons in code
+      - Check if numbers have business meaning
+      - Suggest extracting to named constants
+    examples:
+      bad: |
+        if (user.age >= 18 && user.score > 750) {
+          approveApplication(user);
+        }
+      good: |
+        const MINIMUM_AGE = 18;
+        const MINIMUM_CREDIT_SCORE = 750;
+
+        if (user.age >= MINIMUM_AGE && user.score > MINIMUM_CREDIT_SCORE) {
+          approveApplication(user);
+        }
+    tags:
+      - maintainability
+    why_important: Magic numbers obscure business logic.
+
+  - id: quality_hardcoded_urls
+    agent: quality
+    title: Hardcoded URLs should be extracted to configuration
+    description: External URLs hardcoded in code should be centralized
+    importance: 4
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.tsx'
+        - '**/*.js'
+        - '**/*.jsx'
+      content_regex:
+        - https?://[a-zA-Z0-9]
+        - window\.open\(
+    checklist:
+      - Find hardcoded URLs in component/business logic
+      - Check if URL may change (marketing pages, docs)
+      - Suggest extracting to config file
+    examples:
+      bad: |
+        const openEnterprise = () => {
+          window.open('https://www.company.org/enterprise', '_blank')
+        }
+      good: |
+        // config/urls.ts
+        export const EXTERNAL_URLS = {
+          ENTERPRISE: 'https://www.company.org/enterprise',
+        } as const
+
+        // Component
+        import { EXTERNAL_URLS } from '@/config/urls'
+        const openEnterprise = () => {
+          window.open(EXTERNAL_URLS.ENTERPRISE, '_blank')
+        }
+    tags:
+      - maintainability
+    why_important: Scattered URLs are hard to update.

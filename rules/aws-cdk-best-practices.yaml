@@ -1,0 +1,217 @@
+# Example: AWS CDK best practices
+# Copy to .diffray/rules/ and customize for your CDK project
+
+rules:
+  - id: cdk_construct_naming
+    agent: quality
+    title: CDK construct missing descriptive ID
+    description: CDK constructs should have descriptive IDs that reflect their purpose
+    importance: 7
+    match:
+      file_glob:
+        - '**/*.ts'
+      content_regex:
+        - new \w+\(this,
+        - new \w+\(scope,
+    checklist:
+      - Find CDK construct instantiations
+      - Check if ID is descriptive (not generic like "Resource1")
+      - Verify ID follows naming convention
+    examples:
+      bad: |
+        const table = new dynamodb.Table(this, 'Table', { ... });
+        const fn = new lambda.Function(this, 'Function', { ... });
+        const bucket = new s3.Bucket(this, 'Bucket1', { ... });
+      good: |
+        const reviewsTable = new dynamodb.Table(this, 'ReviewsTable', { ... });
+        const webhookHandler = new lambda.Function(this, 'WebhookHandler', { ... });
+        const artifactsBucket = new s3.Bucket(this, 'ArtifactsBucket', { ... });
+    tags:
+      - quality
+      - cdk
+    why_important: Descriptive IDs appear in CloudFormation and make debugging easier.
+
+  - id: cdk_removal_policy
+    agent: security
+    title: Stateful resource missing removal policy
+    description: DynamoDB tables, S3 buckets should have explicit removalPolicy
+    importance: 9
+    match:
+      file_glob:
+        - '**/*.ts'
+      content_regex:
+        - new dynamodb\.Table
+        - new s3\.Bucket
+    checklist:
+      - Find DynamoDB tables and S3 buckets
+      - Check if removalPolicy is set
+      - Verify RETAIN for production data
+    examples:
+      bad: |
+        const table = new dynamodb.Table(this, 'ReviewsTable', {
+          partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+          // No removalPolicy - defaults to DESTROY!
+        });
+      good: |
+        const table = new dynamodb.Table(this, 'ReviewsTable', {
+          partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+          removalPolicy: cdk.RemovalPolicy.RETAIN,
+          pointInTimeRecovery: true,
+        });
+    tags:
+      - security
+      - cdk
+    why_important: Missing removalPolicy can cause data loss on stack deletion.
+
+  - id: lambda_environment_secrets
+    agent: security
+    title: Lambda environment contains hardcoded secrets
+    description: Secrets should come from SSM Parameter Store or Secrets Manager
+    importance: 10
+    match:
+      file_glob:
+        - '**/*.ts'
+      content_regex:
+        - environment:
+        - API_KEY
+        - SECRET
+        - TOKEN
+        - PASSWORD
+    checklist:
+      - Find Lambda environment variables
+      - Check if secrets are hardcoded
+      - Verify SSM or Secrets Manager is used
+    examples:
+      bad: |
+        const fn = new lambda.Function(this, 'Handler', {
+          environment: {
+            API_KEY: 'sk-1234567890',  // Hardcoded!
+            DATABASE_PASSWORD: 'secret123',
+          },
+        });
+      good: |
+        const apiKeyParam = ssm.StringParameter.fromSecureStringParameterAttributes(
+          this, 'ApiKey', { parameterName: '/myapp/api-key' }
+        );
+
+        const fn = new lambda.Function(this, 'Handler', {
+          environment: {
+            API_KEY_PARAM: apiKeyParam.parameterName,
+          },
+        });
+        apiKeyParam.grantRead(fn);
+    tags:
+      - security
+      - cdk
+    why_important: Hardcoded secrets are exposed in CloudFormation and logs.
+
+  - id: lambda_timeout_memory
+    agent: performance
+    title: Lambda missing timeout or memory configuration
+    description: Lambda functions should have explicit timeout and memorySize
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.ts'
+      content_regex:
+        - new lambda\.Function
+        - new NodejsFunction
+    checklist:
+      - Find Lambda function definitions
+      - Check if timeout is set (default 3s is often too short)
+      - Check if memorySize is appropriate for workload
+    examples:
+      bad: |
+        const fn = new lambda.Function(this, 'Handler', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          handler: 'index.handler',
+          code: lambda.Code.fromAsset('lambda'),
+          // Defaults: 3s timeout, 128MB memory
+        });
+      good: |
+        const fn = new lambda.Function(this, 'Handler', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          handler: 'index.handler',
+          code: lambda.Code.fromAsset('lambda'),
+          timeout: cdk.Duration.seconds(30),
+          memorySize: 256,
+        });
+    tags:
+      - performance
+      - cdk
+    why_important: Default Lambda settings cause timeouts and OOM errors.
+
+  - id: iam_least_privilege
+    agent: security
+    title: IAM policy too permissive
+    description: IAM policies should follow least privilege principle
+    importance: 9
+    match:
+      file_glob:
+        - '**/*.ts'
+      content_regex:
+        - grantFullAccess
+        - 'actions:.*\*'
+        - 'resources:.*\*'
+        - PolicyStatement
+    checklist:
+      - Find IAM policy statements
+      - Check for wildcard actions or resources
+      - Verify least privilege is applied
+    examples:
+      bad: |
+        table.grantFullAccess(fn);
+
+        new iam.PolicyStatement({
+          actions: ['dynamodb:*'],
+          resources: ['*'],
+        });
+      good: |
+        table.grantReadWriteData(fn);
+
+        new iam.PolicyStatement({
+          actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
+          resources: [table.tableArn],
+        });
+    tags:
+      - security
+      - iam
+    why_important: Overly permissive IAM increases blast radius of security incidents.
+
+  - id: step_functions_error_handling
+    agent: bugs
+    title: Step Functions state missing error handling
+    description: Step Functions tasks should have Catch/Retry for resilience
+    importance: 8
+    match:
+      file_glob:
+        - '**/*.ts'
+      content_regex:
+        - new sfn\.
+        - LambdaInvoke
+        - EcsRunTask
+    checklist:
+      - Find Step Functions task definitions
+      - Check if Catch is configured for failures
+      - Verify Retry is configured for transient errors
+    examples:
+      bad: |
+        const runTask = new sfnTasks.LambdaInvoke(this, 'ProcessReview', {
+          lambdaFunction: processFn,
+        });
+        // No error handling!
+      good: |
+        const runTask = new sfnTasks.LambdaInvoke(this, 'ProcessReview', {
+          lambdaFunction: processFn,
+        }).addRetry({
+          errors: ['Lambda.ServiceException', 'Lambda.TooManyRequestsException'],
+          maxAttempts: 3,
+          backoffRate: 2,
+        }).addCatch(failureHandler, {
+          errors: ['States.ALL'],
+          resultPath: '$.error',
+        });
+    tags:
+      - bugs
+      - step-functions
+    why_important: Unhandled errors cause silent failures in workflows.

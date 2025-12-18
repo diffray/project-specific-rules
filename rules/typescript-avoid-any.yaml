@@ -1,0 +1,28 @@
+rules:
+  - id: ts_avoid_the_any_type
+    agent: bugs
+    title: Avoid the 'any' type
+    description:
+      Detect the use of the 'any' type in TypeScript. Using 'any' disables type checking and can lead to runtime
+      errors. Recommend using specific types or generics instead.
+    why_important: Weak typing defeats TypeScript's safety guarantees.
+    importance: 8
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.tsx'
+        - '**/*.js'
+        - '**/*.jsx'
+    checklist:
+      - Find instances matching this pattern
+      - Verify the issue applies to changed code
+      - Suggest fix following the good example
+    examples:
+      bad: 'let foo: any = "bar";'
+      good: 'let foo: string = "bar";'
+    tags:
+      - error-handling
+      - maintainability
+      - style-conventions
+      - typescript
+      - react

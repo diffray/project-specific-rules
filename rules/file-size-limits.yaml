@@ -1,0 +1,56 @@
+# Example: File size limits
+# Copy to .diffray/rules/ and customize thresholds for your project
+
+rules:
+  - id: large_file
+    agent: architecture
+    title: File exceeds recommended size
+    description: Files should not exceed 300 lines; split into smaller modules
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.tsx'
+        - '**/*.js'
+        - '**/*.jsx'
+        - '**/*.py'
+        - '**/*.java'
+        - '**/*.go'
+        - '**/*.rb'
+        - '**/*.rs'
+        - '**/*.cs'
+        - '**/*.kt'
+        - '**/*.swift'
+        - '**/*.php'
+        - '**/*.scala'
+        - '**/*.dart'
+    checklist:
+      - Check if file exceeds 300 lines
+      - Identify logical groupings that could be extracted
+      - Suggest splitting into smaller, focused modules
+    examples:
+      bad: |
+        // payment.service.ts - 500 lines with mixed concerns
+        export class PaymentService {
+          // validation logic (100 lines)
+          // payment processing (200 lines)
+          // notification logic (100 lines)
+          // reporting logic (100 lines)
+        }
+      good: |
+        // payment.service.ts - focused on orchestration
+        import { validatePayment } from './payment-validation';
+        import { processPayment } from './payment-processing';
+        import { notifyPayment } from './payment-notification';
+
+        export class PaymentService {
+          async create(data: PaymentData) {
+            validatePayment(data);
+            const result = await processPayment(data);
+            await notifyPayment(result);
+            return result;
+          }
+        }
+    tags:
+      - architecture
+    why_important: Large files are harder to navigate, test, and maintain.

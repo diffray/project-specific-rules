@@ -1,0 +1,107 @@
+# Example: TypeScript style preferences
+# Copy to .diffray/rules/ and customize for your project's conventions
+
+rules:
+  - id: ts_type_over_interface
+    agent: quality
+    title: Use type instead of interface
+    description: Prefer type aliases over interfaces unless extending or implementing
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.tsx'
+    checklist:
+      - Find interface declarations that are not being extended
+      - Check if the interface is used for class implementation
+      - Suggest converting standalone interfaces to type aliases
+    examples:
+      bad: |
+        interface UserData {
+          name: string;
+          email: string;
+        }
+      good: |
+        type UserData = {
+          name: string;
+          email: string;
+        };
+
+        // Interface is OK when extending
+        interface ExtendedUser extends BaseUser {
+          role: string;
+        }
+    tags:
+      - typescript
+      - style
+    why_important: Type aliases are more flexible and consistent for defining object shapes.
+
+  - id: ts_object_params_threshold
+    agent: quality
+    title: Wrap parameters in object only when more than 3
+    description: Functions with 3 or fewer parameters should use positional args, not object destructuring
+    importance: 5
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.tsx'
+    checklist:
+      - Find functions with object parameter destructuring
+      - Count the number of properties being destructured
+      - If 3 or fewer, suggest using positional parameters
+      - If more than 3, object destructuring is appropriate
+    examples:
+      bad: |
+        // Only 2 params - no need for object
+        function createUser({ name, email }: { name: string; email: string }) {
+          return { name, email };
+        }
+      good: |
+        // 2 params - use positional
+        function createUser(name: string, email: string) {
+          return { name, email };
+        }
+
+        // 4+ params - use object
+        function createPayment({
+          amount,
+          currency,
+          userId,
+          metadata,
+          externalId,
+        }: CreatePaymentParams) {
+          // ...
+        }
+    tags:
+      - typescript
+      - style
+    why_important: Simpler function signatures improve readability for small parameter counts.
+
+  - id: ts_enum_naming
+    agent: quality
+    title: Enum naming conventions
+    description: Enums should use singular PascalCase names with SCREAMING_SNAKE_CASE values
+    importance: 5
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.tsx'
+    checklist:
+      - Find enum declarations
+      - Check if enum name is singular (not plural like "Statuses")
+      - Check if enum values use SCREAMING_SNAKE_CASE
+    examples:
+      bad: |
+        enum PaymentStatuses {
+          pending = 'pending',
+          approved = 'approved',
+        }
+      good: |
+        enum PaymentStatus {
+          PENDING = 'PENDING',
+          APPROVED = 'APPROVED',
+        }
+    tags:
+      - typescript
+      - style
+    why_important: Consistent enum naming improves code readability and follows TypeScript conventions.

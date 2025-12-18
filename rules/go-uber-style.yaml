@@ -1,0 +1,155 @@
+# Example: Go Uber Style Guide rules
+# Copy to .diffray/rules/ and customize for your project
+#
+# These rules are based on Uber's Go Style Guide
+# Not all Go teams follow Uber's conventions - customize as needed
+# https://github.com/uber-go/guide/blob/master/style.md
+
+rules:
+  - id: go_naked_return
+    agent: quality
+    title: Naked return in non-trivial function
+    description: Named return with naked return is confusing in longer functions
+    importance: 5
+    match:
+      file_glob:
+        - '**/*.go'
+      content_regex:
+        - return\s*$
+    checklist:
+      - Find naked returns
+      - Check if function is longer than a few lines
+      - Suggest explicit return values
+    examples:
+      bad: |
+        func parseConfig(data []byte) (config Config, err error) {
+            if len(data) == 0 {
+                err = errors.New("empty data")
+                return  // What is being returned?
+            }
+            // ... 50 lines later ...
+            return  // Even harder to understand
+        }
+      good: |
+        func parseConfig(data []byte) (Config, error) {
+            if len(data) == 0 {
+                return Config{}, errors.New("empty data")
+            }
+            return config, nil
+        }
+    tags:
+      - go
+      - maintainability
+    why_important: Naked returns hide what is being returned.
+
+  - id: go_empty_slice_declaration
+    agent: quality
+    title: Prefer nil slice over empty slice literal
+    description: nil slice is functionally equivalent but cleaner
+    importance: 4
+    match:
+      file_glob:
+        - '**/*.go'
+      content_regex:
+        - := \[\]\w+\{\}
+    checklist:
+      - Find empty slice literals
+      - Check if nil slice would work
+      - Suggest var declaration for nil slice
+    examples:
+      bad: |
+        items := []string{}
+      good: |
+        var items []string
+        // len, cap, range all work on nil slices
+    tags:
+      - go
+    why_important: Unnecessary allocation for empty slices.
+
+  - id: go_context_first_param
+    agent: quality
+    title: Context should be first parameter
+    description: 'Convention: context.Context should be first parameter, named ctx'
+    importance: 5
+    match:
+      file_glob:
+        - '**/*.go'
+      content_regex:
+        - func.*\([^)]+,\s*ctx context\.Context
+    checklist:
+      - Find functions with context parameter
+      - Check if context is first parameter
+      - Suggest moving to first position
+    examples:
+      bad: |
+        func fetch(url string, ctx context.Context) (*Response, error) {
+            // ...
+        }
+      good: |
+        func fetch(ctx context.Context, url string) (*Response, error) {
+            // ...
+        }
+    tags:
+      - go
+    why_important: Go convention for context parameter placement.
+
+  - id: go_init_function
+    agent: quality
+    title: Avoid init() when possible
+    description: init() functions are hard to test and reason about
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.go'
+      content_regex:
+        - func init\(\)
+    checklist:
+      - Find init() functions
+      - Check if initialization can be done differently
+      - Suggest explicit initialization or sync.Once
+    examples:
+      bad: |
+        var db *sql.DB
+
+        func init() {
+            var err error
+            db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+            if err != nil {
+                log.Fatal(err)
+            }
+        }
+      good: |
+        func NewDB(url string) (*sql.DB, error) {
+            return sql.Open("postgres", url)
+        }
+    tags:
+      - go
+      - maintainability
+    why_important: init() is hard to test and has hidden execution order.
+
+  - id: go_receiver_naming
+    agent: quality
+    title: Method receiver should be short, not self/this
+    description: 'Go convention: use one or two letter receiver name'
+    importance: 4
+    match:
+      file_glob:
+        - '**/*.go'
+      content_regex:
+        - func \(self \*?\w+\)
+        - func \(this \*?\w+\)
+    checklist:
+      - Find receivers named self or this
+      - Suggest short receiver name
+    examples:
+      bad: |
+        func (self *User) GetName() string {
+            return self.Name
+        }
+      good: |
+        func (u *User) GetName() string {
+            return u.Name
+        }
+    tags:
+      - go
+    why_important: Go idiom - short receiver names are preferred.

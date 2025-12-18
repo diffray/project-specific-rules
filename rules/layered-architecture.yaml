@@ -1,0 +1,136 @@
+# Example: Layered architecture rules
+# Copy to .diffray/rules/ and customize for your project
+#
+# These rules enforce a specific architectural pattern (Controller -> Service -> Repository)
+# Not all projects use this pattern - some use different architectures:
+# - Vertical slice architecture
+# - Hexagonal architecture
+# - Simple MVC without service layer
+# - Serverless/function-based patterns
+
+rules:
+  - id: arch_business_logic_in_controller
+    agent: architecture
+    title: Business logic in controller/handler layer
+    description: Controllers should delegate to services, not implement business logic directly
+    importance: 8
+    match:
+      file_glob:
+        - '**/controllers/**/*.ts'
+        - '**/controllers/**/*.js'
+        - '**/handlers/**/*.ts'
+        - '**/routes/**/*.ts'
+        - '**/api/**/*.ts'
+      content_regex:
+        - \.(filter|map|reduce)\(
+        - if\s*\(.*===
+        - switch\s*\(
+    checklist:
+      - Find data transformations in controllers
+      - Check for business rule conditionals
+      - Verify controllers only handle request/response
+      - Suggest extracting business logic to service layer
+    examples:
+      bad: |
+        router.get('/users', async (req, res) => {
+          const users = await db.query('SELECT * FROM users');
+          const activeUsers = users.filter(u => u.status === 'active');
+          const enriched = activeUsers.map(u => ({
+            ...u,
+            tier: u.purchases > 100 ? 'gold' : 'standard'
+          }));
+          res.json(enriched);
+        });
+      good: |
+        class UserController {
+          async getUsers(req, res) {
+            const users = await this.userService.getActiveUsersWithTiers();
+            res.json(users);
+          }
+        }
+
+        class UserService {
+          async getActiveUsersWithTiers() {
+            const users = await this.userRepository.findActive();
+            return users.map(u => this.enrichUserWithTier(u));
+          }
+        }
+    tags:
+      - architecture
+      - separation-of-concerns
+    why_important: Business logic in controllers makes code hard to test and reuse.
+
+  - id: arch_direct_db_in_controller
+    agent: architecture
+    title: Direct database access from controller layer
+    description: Controllers should not query database directly, use repository/service layer
+    importance: 8
+    match:
+      file_glob:
+        - '**/controllers/**/*.ts'
+        - '**/handlers/**/*.ts'
+        - '**/routes/**/*.ts'
+      content_regex:
+        - db\.(query|execute|find|select)
+        - prisma\.
+        - mongoose\.
+    checklist:
+      - Find direct database calls in controllers
+      - Verify data access goes through repository layer
+      - Suggest moving queries to data access layer
+    examples:
+      bad: |
+        router.get('/orders/:id', async (req, res) => {
+          const order = await db.query('SELECT * FROM orders WHERE id = ?', [req.params.id]);
+          res.json(order);
+        });
+      good: |
+        router.get('/orders/:id', async (req, res) => {
+          const order = await orderService.getOrderWithItems(req.params.id);
+          res.json(order);
+        });
+    tags:
+      - architecture
+    why_important: Direct DB access in controllers couples layers and hinders testing.
+
+  - id: arch_transport_in_service
+    agent: architecture
+    title: Transport concerns (req/res) in service layer
+    description: Services should not access HTTP request/response objects
+    importance: 7
+    match:
+      file_glob:
+        - '**/services/**/*.ts'
+        - '**/domain/**/*.ts'
+        - '**/business/**/*.ts'
+      content_regex:
+        - req\.(body|params|query|headers)
+        - res\.(json|send|status)
+    checklist:
+      - Find req/res usage in service files
+      - Check for HTTP status codes in business layer
+      - Suggest passing only necessary data to services
+    examples:
+      bad: |
+        class UserService {
+          async createUser(req, res) {
+            const { email } = req.body;
+            const user = await this.repo.create({ email });
+            res.status(201).json(user);
+          }
+        }
+      good: |
+        class UserService {
+          async createUser(data: CreateUserDto): Promise<User> {
+            return this.repo.create(data);
+          }
+        }
+
+        // Controller handles HTTP
+        router.post('/users', async (req, res) => {
+          const user = await userService.createUser(req.body);
+          res.status(201).json(user);
+        });
+    tags:
+      - architecture
+    why_important: Transport concerns in services prevent reuse across different interfaces.

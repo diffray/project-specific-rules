@@ -1,0 +1,251 @@
+# Example: Code complexity thresholds
+# Copy to .diffray/rules/ and customize thresholds for your project
+#
+# These rules enforce numeric limits that vary by team/project:
+# - Some teams prefer 30-line functions, others allow 100
+# - Nesting limits depend on code style and language idioms
+# - Method chain limits depend on fluent API usage patterns
+
+rules:
+  - id: quality_long_method
+    agent: quality
+    title: Long method - too many lines
+    description: Method/function has more than 50 lines of code
+    importance: 7
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.py'
+        - '**/*.java'
+      content_regex:
+        - function\s+\w+
+        - const\s+\w+\s*=\s*\(
+        - def\s+\w+
+    checklist:
+      - Count lines in function (>50 is suspicious)
+      - Check if function has multiple responsibilities
+      - Suggest extracting logical sections into separate functions
+    examples:
+      bad: |
+        // Function with 80+ lines
+        function processOrder(order) {
+          // 20 lines of validation
+          // 20 lines of price calculation
+          // 20 lines of discount logic
+          // 20 lines of saving
+        }
+      good: |
+        // Split into focused functions
+        function processOrder(order) {
+          validateOrder(order);
+          const total = calculateTotal(order);
+          const finalPrice = applyDiscounts(total, order.user);
+          saveOrder(order, finalPrice);
+        }
+    tags:
+      - maintainability
+    why_important: Long functions are harder to test and maintain.
+
+  - id: quality_deep_nesting
+    agent: quality
+    title: Deep nesting - too many levels
+    description: Code has more than 3 levels of nesting
+    importance: 7
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.py'
+      content_regex:
+        - if.*\{[^}]*if.*\{[^}]*if.*\{[^}]*if
+    checklist:
+      - Count nesting levels (>3 is problematic)
+      - Suggest early returns to reduce nesting
+      - Suggest extracting nested logic to functions
+    examples:
+      bad: |
+        // Deep nesting - 4 levels
+        function process(data) {
+          if (data) {
+            if (data.user) {
+              if (data.user.isActive) {
+                if (data.user.hasPermission) {
+                  // Do something
+                }
+              }
+            }
+          }
+        }
+      good: |
+        // Early returns - flat structure
+        function process(data) {
+          if (!data) return;
+          if (!data.user) return;
+          if (!data.user.isActive) return;
+          if (!data.user.hasPermission) return;
+          // Do something
+        }
+    tags:
+      - maintainability
+    why_important: Deep nesting increases cognitive load.
+
+  - id: quality_nested_ternary_js
+    agent: quality
+    title: Deeply nested ternary operators
+    description: Nested ternary operators reduce readability and increase cognitive load
+    importance: 7
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.tsx'
+        - '**/*.jsx'
+      content_regex:
+        - '\?\s*[^:]+\s*:\s*[^?]+\?\s*'
+    checklist:
+      - Find ternary operators with 2+ levels of nesting
+      - Check if logic could be simplified with if/else
+      - Suggest refactoring to more readable structure
+    examples:
+      bad: |
+        const result = condition1
+          ? (condition2 ? valueA : (condition3 ? valueB : valueC))
+          : valueD;
+      good: |
+        function getResult() {
+          if (condition1 && condition2) return valueA;
+          if (condition1 && condition3) return valueB;
+          if (condition1) return valueC;
+          return valueD;
+        }
+    tags:
+      - readability
+      - javascript
+    why_important: Nested ternaries are difficult to understand and debug.
+
+  - id: quality_long_method_chain_js
+    agent: quality
+    title: Complex method chains without intermediate variables
+    description: Long method chains that are hard to understand and debug
+    importance: 5
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.tsx'
+        - '**/*.jsx'
+      content_regex:
+        - '\.\w+\([^)]*\)\s*\.\w+\([^)]*\)\s*\.\w+\([^)]*\)\s*\.\w+\('
+    checklist:
+      - Find method chains with 4+ operations
+      - Verify if intermediate variables would aid debugging
+      - Suggest breaking chain into logical steps
+    examples:
+      bad: |
+        return data.filter(x => x.active).map(x => x.id).reduce((a, b) => a + b, 0).toFixed(2);
+      good: |
+        const activeItems = data.filter(x => x.active);
+        const ids = activeItems.map(x => x.id);
+        const sum = ids.reduce((a, b) => a + b, 0);
+        return sum.toFixed(2);
+    tags:
+      - readability
+      - debugging
+    why_important: Long chains are hard to debug - intermediate values are invisible.
+
+  - id: quality_complex_boolean_js
+    agent: quality
+    title: Complex boolean expressions
+    description: Boolean expressions with multiple operators that are hard to understand
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.tsx'
+        - '**/*.jsx'
+      content_regex:
+        - '&&.*&&.*&&'
+        - '\|\|.*\|\|.*\|\|'
+    checklist:
+      - Find boolean expressions with 3+ logical operators
+      - Suggest extracting conditions to named variables
+    examples:
+      bad: |
+        if ((a && b && !c) || (d && (e || f)) || (!g && h && i)) {
+          doSomething();
+        }
+      good: |
+        const isEligibleUser = a && b && !c;
+        const hasSpecialAccess = d && (e || f);
+        const meetsAltCriteria = !g && h && i;
+
+        if (isEligibleUser || hasSpecialAccess || meetsAltCriteria) {
+          doSomething();
+        }
+    tags:
+      - readability
+    why_important: Complex boolean expressions hide intent.
+
+  - id: arch_god_object
+    agent: architecture
+    title: God Object - Class with too many responsibilities
+    description: Class has too many methods or handles unrelated responsibilities
+    importance: 8
+    match:
+      file_glob:
+        - '**/*.ts'
+        - '**/*.js'
+        - '**/*.java'
+        - '**/*.py'
+      content_regex:
+        - class\s+\w+Manager
+        - class\s+\w+Service
+    checklist:
+      - Count methods in class (>15 is suspicious)
+      - Check if class has multiple unrelated responsibilities
+      - Suggest splitting into focused classes
+    examples:
+      bad: |
+        class UserManager {
+          authenticate(user) { ... }
+          sendEmail(to, subject) { ... }
+          generateReport() { ... }
+          exportToPdf() { ... }
+          // ... 10 more unrelated methods
+        }
+      good: |
+        class AuthService { authenticate(user) { ... } }
+        class EmailService { sendEmail(to, subject) { ... } }
+        class ReportGenerator { generateReport() { ... } }
+    tags:
+      - architecture
+    why_important: Large classes are hard to test and maintain.
+
+  - id: arch_deep_inheritance
+    agent: architecture
+    title: Deep inheritance hierarchy
+    description: More than 3 levels of class inheritance
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.+(js|ts|java|py)'
+      content_regex:
+        - extends\s+\w+
+    checklist:
+      - Count inheritance levels (>3 is problematic)
+      - Suggest composition over inheritance
+    examples:
+      bad: |
+        class Animal { }
+        class Mammal extends Animal { }
+        class Dog extends Mammal { }
+        class Labrador extends Dog { }  // 4 levels
+      good: |
+        // Use composition
+        const canBark = { bark: () => console.log('Woof!') };
+        const labrador = { ...canBark, breed: 'Labrador' };
+    tags:
+      - architecture
+    why_important: Deep hierarchies create tight coupling.

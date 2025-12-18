@@ -1,0 +1,243 @@
+# Example: Documentation style preferences
+# Copy to .diffray/rules/ and customize for your project's style guide
+
+rules:
+  - id: docs_personal_pronouns
+    agent: documentation
+    title: Using personal pronouns in documentation
+    description: Use neutral language - avoid "we", "our" in technical docs
+    importance: 4
+    match:
+      file_glob:
+        - '**/*.md'
+        - '**/*.mdx'
+      content_regex:
+        - \bwe\b
+        - \bour\b
+        - \bWe\b
+        - \bOur\b
+    checklist:
+      - Find personal pronouns
+      - Suggest neutral alternatives
+    examples:
+      bad: |
+        ## Getting Started
+
+        We recommend installing the package globally.
+        Our API provides several endpoints.
+        We will walk you through the setup.
+      good: |
+        ## Getting Started
+
+        Install the package globally for best results.
+        The API provides several endpoints.
+        This guide walks through the setup process.
+    tags:
+      - style-conventions
+      - documentation
+    why_important: Neutral language is more professional and inclusive.
+
+  - id: docs_sentence_case_headers
+    agent: documentation
+    title: Incorrect header capitalization
+    description: Use sentence case for headers (capitalize first word only)
+    importance: 4
+    match:
+      file_glob:
+        - '**/*.md'
+        - '**/*.mdx'
+      content_regex:
+        - ^##+ [A-Z][a-z]+ [A-Z]
+    checklist:
+      - Find headers with title case
+      - Suggest sentence case
+      - Preserve proper nouns/acronyms
+    examples:
+      bad: |
+        ## Getting Started With The API
+        ### How To Configure Your Settings
+        ## API Reference Guide
+      good: |
+        ## Getting started with the API
+        ### How to configure your settings
+        ## API reference guide
+
+        <!-- Proper nouns stay capitalized -->
+        ## Working with GraphQL
+        ## Installing Node.js
+    tags:
+      - style-conventions
+      - documentation
+    why_important: Consistent capitalization looks professional.
+
+  - id: docs_oxford_comma
+    agent: documentation
+    title: Missing Oxford comma in list
+    description: Use Oxford comma for clarity in lists
+    importance: 3
+    match:
+      file_glob:
+        - '**/*.md'
+        - '**/*.mdx'
+      content_regex:
+        - ", \\w+ and \\w+"
+    checklist:
+      - Find lists without Oxford comma
+      - Suggest adding comma before "and"
+    examples:
+      bad: |
+        The system supports JavaScript, TypeScript and Python.
+        Configure the name, port and timeout settings.
+      good: |
+        The system supports JavaScript, TypeScript, and Python.
+        Configure the name, port, and timeout settings.
+    tags:
+      - style-conventions
+      - documentation
+    why_important: Oxford comma prevents ambiguity in lists.
+
+  - id: docs_imperative_mood
+    agent: documentation
+    title: Not using imperative mood for instructions
+    description: Use imperative mood for action steps
+    importance: 4
+    match:
+      file_glob:
+        - '**/*.md'
+        - '**/*.mdx'
+      content_regex:
+        - You should
+        - You can
+        - You need to
+    checklist:
+      - Find passive/suggestive language
+      - Convert to imperative mood
+    examples:
+      bad: |
+        ## Setup
+
+        1. You should install the dependencies first.
+        2. You can then configure the settings.
+        3. You need to restart the server.
+      good: |
+        ## Setup
+
+        1. Install the dependencies.
+        2. Configure the settings.
+        3. Restart the server.
+    tags:
+      - style-conventions
+      - documentation
+    why_important: Imperative mood is clearer for instructions.
+
+  - id: docs_missing_prerequisites
+    agent: documentation
+    title: Installation docs missing prerequisites
+    description: List requirements before installation steps
+    importance: 6
+    match:
+      file_glob:
+        - '**/README.md'
+        - '**/INSTALL.md'
+        - '**/getting-started.md'
+      content_regex:
+        - '## Installation'
+        - '## Getting Started'
+        - npm install
+    checklist:
+      - Find installation sections
+      - Check for prerequisites list
+      - Suggest adding requirements
+    examples:
+      bad: |
+        ## Installation
+
+        ```bash
+        npm install mypackage
+        ```
+      good: |
+        ## Prerequisites
+
+        - Node.js 18 or higher
+        - npm 9 or higher
+        - Git
+
+        ## Installation
+
+        ```bash
+        npm install mypackage
+        ```
+    tags:
+      - style-conventions
+      - documentation
+    why_important: Missing prerequisites cause failed installations.
+
+  - id: docs_missing_installation
+    agent: documentation
+    title: README missing installation instructions
+    description: README.md doesn't have installation or setup section
+    importance: 8
+    match:
+      file_glob:
+        - '**/README.md'
+      content_regex:
+        - ^#
+    checklist:
+      - Check if README has Installation or Setup section
+      - Verify npm install or equivalent is documented
+      - Check for system requirements
+    examples:
+      bad: |
+        # My Project
+
+        Description of the project...
+
+        ## Features
+
+        - Feature 1
+        - Feature 2
+      good: |
+        # My Project
+
+        Description of the project...
+
+        ## Installation
+
+        ```bash
+        npm install my-project
+        ```
+
+        ## Usage
+
+        ```javascript
+        import { Something } from 'my-project';
+        ```
+    tags:
+      - documentation
+    why_important: Users need to know how to install the package.
+
+  - id: docs_missing_language_tags
+    agent: documentation
+    title: Code blocks missing language tags
+    description: Code blocks don't specify language for syntax highlighting
+    importance: 5
+    match:
+      file_glob:
+        - '**/*.md'
+      content_regex:
+        - "```\\n"
+    checklist:
+      - Find code blocks without language tags
+      - Suggest adding language (js, ts, python, etc.)
+    examples:
+      bad: |
+        ```
+        const x = 5;
+        ```
+      good: |
+        ```javascript
+        const x = 5;
+        ```
+    tags:
+      - documentation
+    why_important: Language tags enable syntax highlighting.

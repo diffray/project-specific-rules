@@ -1,0 +1,118 @@
+# Example: Test naming conventions
+# Copy to .diffray/rules/ and customize for your team
+#
+# Test naming conventions vary significantly by team:
+# - "should [outcome] when [scenario]"
+# - "Test[Function]_[Scenario]_[Outcome]" (Go style)
+# - "given_when_then" style
+# - Simple descriptive names
+
+rules:
+  - id: test_generic_test_names_js
+    agent: testing
+    title: Generic or non-descriptive test names
+    description: Test names should describe functionality, scenario, and expected outcome
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.test.ts'
+        - '**/*.test.js'
+        - '**/*.spec.ts'
+        - '**/*.spec.js'
+      content_regex:
+        - it\(['"]
+        - test\(['"]
+    checklist:
+      - Find test names that are too generic
+      - Check if test name describes what is being tested
+      - Look for names like "should work", "test 1", "handles error"
+      - Suggest descriptive name following pattern
+    examples:
+      bad: |
+        it('should work correctly', () => { ... });
+        it('test', () => { ... });
+        it('error handling', () => { ... });
+        test('user login', () => { ... });
+      good: |
+        it('should return 404 when user is not found', () => { ... });
+        it('should sanitize input and return escaped HTML string', () => { ... });
+        test('createUser throws ValidationError when email is invalid', () => { ... });
+    tags:
+      - testing
+      - quality
+    why_important: Descriptive test names serve as documentation.
+
+  - id: test_generic_test_names_go
+    agent: testing
+    title: Generic or non-descriptive test names
+    description: Test names should describe functionality, scenario, and expected outcome
+    importance: 6
+    match:
+      file_glob:
+        - '**/*_test.go'
+      content_regex:
+        - func Test
+        - func Benchmark
+    checklist:
+      - Find test names that are too generic
+      - Check if test name describes what is being tested
+      - Verify test name includes expected outcome
+      - Look for names like "TestHandler", "TestProcess", "TestBasic"
+      - Suggest descriptive name following pattern "Test[Function]_[Scenario]_[Outcome]"
+    examples:
+      bad: |
+        func TestHandler(t *testing.T) { ... }
+        func TestProcess(t *testing.T) { ... }
+        func TestUser(t *testing.T) { ... }
+      good: |
+        func TestHandler_ReturnsNotFound_WhenUserMissing(t *testing.T) {
+            req := httptest.NewRequest("GET", "/users/999", nil)
+            rec := httptest.NewRecorder()
+            handler.ServeHTTP(rec, req)
+            if rec.Code != http.StatusNotFound {
+                t.Errorf("expected 404, got %d", rec.Code)
+            }
+        }
+
+        func TestCreateOrder_Success_WithValidPayment(t *testing.T) { ... }
+    tags:
+      - testing
+      - quality
+      - go
+    why_important: Descriptive test names serve as documentation and help debug failures.
+
+  - id: test_generic_test_names_python
+    agent: testing
+    title: Generic or non-descriptive test names
+    description: Test names should describe functionality, scenario, and expected outcome
+    importance: 6
+    match:
+      file_glob:
+        - '**/test_*.py'
+        - '**/*_test.py'
+        - '**/tests/**/*.py'
+      content_regex:
+        - def test_
+        - class Test
+    checklist:
+      - Find test names that are too generic
+      - Check if test name describes what is being tested
+      - Suggest descriptive name following pattern "test_[action]_[scenario]_[outcome]"
+    examples:
+      bad: |
+        def test_user(): pass
+        def test_it_works(): pass
+        def test_basic(): ...
+      good: |
+        def test_login_returns_token_for_valid_credentials():
+            token = auth_service.login("user@example.com", "password123")
+            assert token is not None
+
+        def test_login_raises_auth_error_for_invalid_password():
+            with pytest.raises(AuthenticationError):
+                auth_service.login("user@example.com", "wrong_password")
+    tags:
+      - testing
+      - quality
+      - python
+    why_important: Descriptive test names serve as documentation.

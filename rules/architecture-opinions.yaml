@@ -1,0 +1,133 @@
+# Example: Architecture opinion rules
+# Copy to .diffray/rules/ and customize for your project
+#
+# These rules enforce specific architectural opinions that may not apply to all projects:
+# - YAGNI/overengineering detection is subjective
+# - Factory/Builder patterns are valid in many contexts
+# - Plugin systems are appropriate for extensible applications
+# - Complexity judgments vary by domain
+
+rules:
+  - id: arch_premature_abstraction
+    agent: architecture
+    title: Premature abstraction (YAGNI violation)
+    description: Creating abstractions or patterns for single use case
+    importance: 7
+    match:
+      file_glob:
+        - '**/*.+(js|ts|py|java)'
+      content_regex:
+        - class.*Factory
+        - class.*Builder
+        - class.*Strategy
+    checklist:
+      - Find factory, builder, strategy patterns
+      - Check if pattern has multiple implementations
+      - If only one implementation exists, flag as premature
+      - Suggest starting simple, refactor when needed
+    examples:
+      bad: |
+        // Factory for single type
+        class UserFactory {
+          createUser(type, data) {
+            switch(type) {
+              case 'basic': return new BasicUser(data);
+              // Only BasicUser is actually used
+            }
+          }
+        }
+      good: |
+        // Start simple
+        function createUser(data) {
+          return new User(data);
+        }
+        // Add abstraction when second type is ACTUALLY needed
+    tags:
+      - architecture
+    why_important: Unused abstractions add complexity.
+
+  - id: arch_overengineering
+    agent: architecture
+    title: Over-engineering for current needs
+    description: Building extensible systems for simple, specific requirements
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.+(js|ts|java|py)'
+      content_regex:
+        - interface.*Plugin
+        - class.*Registry
+    checklist:
+      - Find plugin systems, registries, managers
+      - Check if complexity is justified by requirements
+      - Verify multiple plugins/strategies actually exist
+    examples:
+      bad: |
+        // Over-engineered plugin system for one logger
+        interface LoggerPlugin { log(message: string): void; }
+        class LoggerRegistry {
+          private plugins: Map<string, LoggerPlugin> = new Map();
+        }
+        // Only one logger is ever registered!
+      good: |
+        // Simple direct usage
+        const logger = new ConsoleLogger();
+        logger.log('message');
+    tags:
+      - architecture
+    why_important: Every abstraction layer adds cognitive load.
+
+  - id: arch_unnecessary_complexity
+    agent: quality
+    title: Unnecessary complexity (KISS violation)
+    description: Overly complex code when simple solution exists
+    importance: 7
+    match:
+      file_glob:
+        - '**/*.+(js|ts|py)'
+      content_regex:
+        - \.reduce\(
+    checklist:
+      - Find complex operations (reduce with spread)
+      - Check if simpler alternative exists
+      - Suggest clearer, more readable version
+    examples:
+      bad: |
+        const result = data.reduce((acc, item) => {
+          return [...acc, ...(item.active ? [{ ...item, processed: true }] : [])];
+        }, []);
+      good: |
+        const result = data
+          .filter(item => item.active)
+          .map(item => ({ ...item, processed: true }));
+    tags:
+      - maintainability
+      - readability
+    why_important: Complex code is harder to understand and maintain.
+
+  - id: arch_premature_optimization
+    agent: quality
+    title: Premature optimization obscuring clarity
+    description: Micro-optimizations that harm readability without proven benefit
+    importance: 6
+    match:
+      file_glob:
+        - '**/*.+(js|ts|py)'
+      content_regex:
+        - "&\\s*1"
+        - ">>\\s*1"
+    checklist:
+      - Find bit manipulation or micro-optimizations
+      - Check if clarity is sacrificed
+      - Verify if optimization is actually needed (profiled?)
+    examples:
+      bad: |
+        const isEven = n => !(n & 1);  // Bit manipulation
+        const double = n => n << 1;    // Bit shift
+      good: |
+        const isEven = n => n % 2 === 0;
+        const double = n => n * 2;
+        // Optimize ONLY if profiling shows bottleneck
+    tags:
+      - maintainability
+    why_important: Obscure optimizations harm readability.
