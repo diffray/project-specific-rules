@@ -1,0 +1,48 @@
+# PR Description: Explain "Why" Not "What"
+#
+# Ensures PR descriptions focus on motivation, not just listing changes.
+
+rules:
+  - id: pr_description_explain_why
+    agent: general
+    title: PR description should explain motivation, not just list changes
+    description: |
+      PR descriptions should focus on WHY changes were made, not just WHAT changed.
+      Reviewers can see the "what" in the diff - they need context about the motivation.
+    importance: 7
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Use git log to check the commit messages for this PR
+      - Check if the PR description (if available from context) explains the business reason
+      - Verify the changes have context about the problem being solved
+      - Look for explanations of "why this approach" vs alternatives
+      - If description only lists files changed without motivation, flag it
+    examples:
+      bad: |
+        # Bad: Only describes what changed
+        - Updated UserService.ts
+        - Added new validation to login form
+        - Fixed bug in payment processing
+
+        # Bad: Too vague
+        "Minor improvements", "Bug fixes", "Code cleanup"
+      good: |
+        ## Problem
+        Users were experiencing timeouts during checkout when their cart
+        contained more than 50 items due to N+1 query issue.
+
+        ## Solution
+        Implemented batch loading for cart items using DataLoader pattern.
+
+        ## Why this approach?
+        Considered caching but chose DataLoader to avoid cache invalidation.
+    tags:
+      - pr-level
+      - quality
+      - documentation
+    why_important: |
+      Good PR descriptions create searchable documentation, help reviewers understand
+      context, and make it easier to understand changes months later.

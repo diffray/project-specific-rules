@@ -1,0 +1,44 @@
+# PR Scope: Single Responsibility
+#
+# Ensures PRs focus on one logical change, not mixing unrelated work.
+
+rules:
+  - id: pr_single_responsibility
+    agent: general
+    title: PR mixes unrelated changes
+    description: |
+      Each PR should focus on one logical change. Mixing features, refactoring,
+      and bug fixes makes review harder and increases merge conflict risk.
+    importance: 7
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Review the list of changed files to identify distinct areas of change
+      - Check if changes span multiple unrelated features or systems
+      - Look for signs of opportunistic cleanups bundled with features
+      - Verify commit messages describe related work, not mixed concerns
+      - If PR touches auth AND payment AND styling, flag it
+    examples:
+      bad: |
+        # Bad: Multiple unrelated changes
+        Title: Add user dashboard and fix payment bug and update deps
+        Files changed:
+        - src/dashboard/* (new feature)
+        - src/payment/* (bug fix)
+        - package.json (deps update)
+        - src/**/*.ts (reformatting)
+      good: |
+        # Good: Single focused change
+        Title: Add user dashboard
+        Files changed:
+        - src/dashboard/*
+        - src/api/dashboard.ts
+        - tests/dashboard.test.ts
+    tags:
+      - pr-level
+      - quality
+    why_important: |
+      Single-responsibility PRs are easier to review, safer to merge,
+      and simpler to revert if something goes wrong.

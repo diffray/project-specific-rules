@@ -31,13 +31,19 @@ review:
   # Maximum files to review per PR (0 = no limit)
   maxFiles: 150
 
-  # Language for review comments (overrides REVIEW_LANGUAGE env var)
-  # Options: english, russian, portuguese, german, french, spanish
-  language: german
-
   # AI model for reviews (overrides REVIEW_MODEL env var)
   # Options: opus (most capable), sonnet (balanced), haiku (fastest)
-  model: opus
+  model: sonnet
+
+  # Minimum confidence threshold (0-100)
+  # Only issues with confidence >= this value will be reported
+  # Default: 60
+  minConfidence: 60
+
+  # Minimum importance threshold (0-10)
+  # Only issues with importance >= this value will be reported
+  # Default: 1
+  minImportance: 1
 
 # Rules settings
 rules:

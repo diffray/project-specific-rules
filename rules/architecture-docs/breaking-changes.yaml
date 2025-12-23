@@ -1,0 +1,44 @@
+# Breaking Changes Documentation
+#
+# Ensures breaking changes are clearly documented with migration guidance.
+
+rules:
+  - id: breaking_changes_documented
+    agent: general
+    title: Breaking changes must be clearly documented
+    description: |
+      PRs with breaking changes must document what breaks, who is affected,
+      and provide migration guidance.
+    importance: 9
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Check if changes modify public APIs, remove features, or change behavior
+      - Look for breaking patterns (renamed exports, changed function signatures)
+      - If breaking changes exist, verify commit messages include BREAKING CHANGE
+      - Check for migration guide or upgrade instructions in description
+    examples:
+      bad: |
+        # Bad: Breaking change without notice
+        feat: update authentication API
+        (changed from session cookies to JWT without documentation)
+      good: |
+        # Good: Clear breaking change notice
+        feat!: migrate auth from sessions to JWT
+
+        BREAKING CHANGE: /auth/login now returns JWT token.
+
+        Migration:
+        1. Update login handler to store JWT
+        2. Add Authorization header to API calls
+        3. Remove cookie handling code
+    tags:
+      - pr-level
+      - git-history
+      - breaking-changes
+      - api
+    why_important: |
+      Undocumented breaking changes cause production incidents, frustrated
+      consumers, and erode trust in the codebase.

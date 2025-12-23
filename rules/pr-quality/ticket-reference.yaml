@@ -1,0 +1,41 @@
+# PR Traceability: Ticket Reference
+#
+# Ensures PRs link to the issue/ticket that tracks the work.
+
+rules:
+  - id: pr_ticket_reference
+    agent: general
+    title: PR should reference an issue or ticket
+    description: |
+      PRs should link to the issue/ticket that tracks the work for traceability.
+      This helps with release notes, audit trails, and understanding context.
+    importance: 5
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Check commit messages for ticket references (PROJ-123, #123, ENG-456)
+      - Look for issue URLs in commit messages or PR body
+      - Verify the reference format matches common patterns (Jira, Linear, GitHub)
+      - Only flag if NO commits have any ticket reference
+    examples:
+      bad: |
+        # Bad: No ticket reference
+        fix: resolve login timeout
+        feat: add user preferences
+
+        # Bad: Vague reference
+        fix: various bug fixes from backlog
+      good: |
+        # Good: Clear ticket references
+        fix(PROJ-123): resolve login timeout issue
+        feat(ENG-456): add user preferences page
+        Fixes #789
+    tags:
+      - pr-level
+      - git-history
+      - traceability
+    why_important: |
+      Ticket references enable traceability between code changes and requirements,
+      help generate release notes, and provide audit trails.

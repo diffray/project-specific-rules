@@ -1,0 +1,42 @@
+# Feature Test Coverage
+#
+# Ensures new features include corresponding tests.
+
+rules:
+  - id: feature_test_coverage
+    agent: general
+    title: New features should include tests
+    description: |
+      PRs that add new functionality should include corresponding tests.
+      Tests provide documentation, prevent regressions, and enable refactoring.
+    importance: 7
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Check if PR adds new functionality (new files, new exports, new endpoints)
+      - If feature PR, verify test files are included in changes
+      - Look for test files matching the pattern *test*, *spec*, __tests__
+      - Check ratio of production code to test code
+      - Flag feature PRs with zero test changes
+    examples:
+      bad: |
+        # Feature without tests
+        Files changed:
+        - src/features/payment/processor.ts (+200 lines)
+        - src/features/payment/types.ts (+50 lines)
+        (No test files)
+      good: |
+        # Feature with tests
+        Files changed:
+        - src/features/payment/processor.ts (+200 lines)
+        - src/features/payment/types.ts (+50 lines)
+        - src/features/payment/__tests__/processor.test.ts (+150 lines)
+    tags:
+      - pr-level
+      - testing
+      - quality
+    why_important: |
+      Untested code is legacy code. Tests enable confident refactoring,
+      document expected behavior, and catch regressions early.

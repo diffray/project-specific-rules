@@ -1,0 +1,39 @@
+# Atomic Commits
+#
+# Ensures each commit represents one logical, self-contained change.
+
+rules:
+  - id: commit_atomic_changes
+    agent: general
+    title: Commits should be atomic (one logical change each)
+    description: |
+      Each commit should represent one logical, self-contained change.
+      Atomic commits are easier to review, revert, and cherry-pick.
+    importance: 6
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Use `git log --stat` to check commit sizes and scope
+      - Look for commits that mix unrelated changes
+      - Check for "WIP" or fixup commits that should be squashed
+      - Verify each commit could be reverted independently
+      - Flag commits like "fix typo and add feature and update deps"
+    examples:
+      bad: |
+        commit: "Add user auth and fix typos and update deps"
+        Files:
+        - src/auth/* (new feature)
+        - README.md (typo fix)
+        - package.json (deps)
+      good: |
+        commit 1: "chore(deps): update dependencies"
+        commit 2: "docs: fix typos in README"
+        commit 3: "feat(auth): add user login with OAuth2"
+    tags:
+      - git-history
+      - quality
+    why_important: |
+      Atomic commits make git history useful for debugging (git bisect),
+      enable safe cherry-picking, and simplify code review.

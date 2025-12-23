@@ -1,0 +1,44 @@
+# Architecture Decision Record Reference
+#
+# Ensures major architectural changes reference ADRs.
+
+rules:
+  - id: architecture_adr_reference
+    agent: general
+    title: Significant architectural changes need ADR reference
+    description: |
+      Major architectural changes should reference an Architecture Decision
+      Record documenting the decision and alternatives considered.
+    importance: 6
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Check if PR introduces new frameworks, patterns, or major structural changes
+      - Look for signs of architectural decisions (new dependencies, new patterns)
+      - If architectural, check for ADR reference (docs/adr/*.md or wiki link)
+      - Consider architectural if adding new data stores, protocols, or major libs
+    examples:
+      bad: |
+        # Major change without ADR
+        Title: Migrate from REST to GraphQL
+        Description: Switched our API to GraphQL.
+        (No link to decision documentation)
+      good: |
+        # With ADR reference
+        Title: Migrate from REST to GraphQL
+
+        This implements ADR-005: API Strategy
+        See: docs/adr/005-graphql-migration.md
+
+        Alternatives considered:
+        - Keep REST (rejected: N+1 issues)
+        - gRPC (rejected: browser support)
+    tags:
+      - pr-level
+      - architecture
+      - documentation
+    why_important: |
+      ADRs capture the context and reasoning behind decisions, helping
+      future maintainers understand why things are the way they are.

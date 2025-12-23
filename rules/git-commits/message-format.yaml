@@ -1,0 +1,44 @@
+# Commit Message Format
+#
+# Ensures commit messages follow conventional format for readability and automation.
+
+rules:
+  - id: commit_message_format
+    agent: general
+    title: Commit messages should follow conventional format
+    description: |
+      Commit messages should follow a consistent format for readability,
+      automated changelog generation, and semantic versioning.
+    importance: 5
+    always_run: true
+    match:
+      file_glob:
+        - '**/*'
+    checklist:
+      - Use `git log --oneline` to check recent commit messages
+      - Verify commits follow type(scope) format or similar convention
+      - Check for clear, descriptive messages (not "fix stuff", "WIP", "update")
+      - Look for imperative mood in commit subject lines
+      - Only flag if majority of commits are poorly formatted
+    examples:
+      bad: |
+        fix stuff
+        update code
+        WIP
+        asdfasdf
+        more changes
+        final fix
+        final fix 2
+      good: |
+        feat(auth): add OAuth2 login with Google provider
+        fix(api): handle null response from payment service
+        refactor(db): extract repository pattern from UserService
+        docs(readme): add API usage examples
+        chore(deps): update lodash to fix security vulnerability
+    tags:
+      - git-history
+      - quality
+      - automation
+    why_important: |
+      Consistent commit messages enable automated changelogs, semantic versioning,
+      and make git history searchable and understandable.
